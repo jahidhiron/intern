@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import axios from 'axios';
+import { useDispatch } from 'react-redux';
+
+import { addTodoStart } from '../redux/features/todoSlice';
 
 const initialTodo = {
   title: '',
@@ -16,6 +18,7 @@ const AddTodo = () => {
   const [errors, setErrors] = useState(initialTodoError);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const dispatch = useDispatch();
 
   const handleChange = (e) => {
     setTodo((perv) => ({ ...perv, [e.target.name]: e.target.value }));
@@ -35,25 +38,20 @@ const AddTodo = () => {
     }
 
     if (!tempErrors?.title) {
-      try {
-        const { data, status } = await axios.post(
-          'http://localhost:4001/todos',
-          todo
-        );
-        if (status === 201) {
-          setSuccess(data?.success);
-          setTimeout(() => {
-            setSuccess('');
-          }, 1000);
-        }
-      } catch (error) {
-        setErrors((prev) => ({
-          ...prev,
-          title: error?.response?.data?.title,
-        }));
-        setLoading(false);
-      }
+      dispatch(
+        addTodoStart({
+          todo,
+          callback: ({ error, data }) => {
+            if (!error) {
+              setSuccess(todo?.success);
+            } else {
+              setErrors(error);
+            }
+          },
+        })
+      );
     }
+
     setLoading(false);
   };
 
@@ -79,6 +77,7 @@ const AddTodo = () => {
                 type="text"
                 name="title"
                 placeholder="title"
+                value={todo?.title}
                 onChange={handleChange}
               />
               {!errors?.title ? (
@@ -95,6 +94,7 @@ const AddTodo = () => {
                 className=" w-full border   mt-3 p-1"
                 type="text"
                 name="category"
+                value={todo?.category}
                 placeholder="category"
                 onChange={handleChange}
               />
@@ -107,6 +107,7 @@ const AddTodo = () => {
                 name="desc"
                 className=" w-full border   mt-3 p-1"
                 placeholder="description"
+                value={todo?.desc}
                 onChange={handleChange}
               ></textarea>
             </div>
